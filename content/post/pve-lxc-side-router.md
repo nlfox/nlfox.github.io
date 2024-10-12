@@ -1,12 +1,16 @@
 ---
 title: PVE LXC OpenWRT  单网口旁路由设置
 description: PVE LXC OpenWRT  单网口旁路由设置
-date: 2024-02-22
+date: 2024-09-10
 image: https://upload.wikimedia.org/wikipedia/commons/8/84/OpenWrt_Logo.svg
 categories:
     - HomeLab
+    - Networking
 tags:
   - proxmox
+  - linux
+  - openwrt
+
 ---
 
 先下载openwrt，下载官方rootfs就行
