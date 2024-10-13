@@ -4,6 +4,7 @@ slug: "search"
 layout: "search"
 outputs:
     - html
+    - RSS
     - json
 menu:
     main:

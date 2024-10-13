@@ -22,3 +22,11 @@ url = "https://x.com/nl_fox"
 
 [social.params]
 icon = "brand-twitter"
+
+[[social]]
+identifier = "rss"
+name = "RSS"
+url = "https://blog.nlfox.net/index.xml"
+
+[social.params]
+icon = "rss"
