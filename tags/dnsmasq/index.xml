@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Dnsmasq on nlfox's Blog</title><link>https://blog.nlfox.net/tags/dnsmasq/</link><description>Recent content in Dnsmasq on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Fri, 11 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/tags/dnsmasq/index.xml" rel="self" type="application/rss+xml"/><item><title>DHCP自定义设备网关和DNS</title><link>https://blog.nlfox.net/p/dhcp%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AE%BE%E5%A4%87%E7%BD%91%E5%85%B3%E5%92%8Cdns/</link><pubDate>Fri, 11 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/dhcp%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AE%BE%E5%A4%87%E7%BD%91%E5%85%B3%E5%92%8Cdns/</guid><description>&lt;p>在设置完软路由（旁路由）之后，需要修改DHCP选项让软路由来做主要的路由。
+但是大部分时候并不想让所有设备都走代理，一个一个设置静态ip太麻烦，而且有些设备并不能设置静态ip。&lt;/p>
+&lt;p>每个设备加入网络的时候会发一个DHCP广播(DISCOVER) 来请求ip。所以从原理上来讲，dhcp server肯定能通过不同的mac地址来分配DHCP地址。&lt;/p>
+&lt;p>以OpenWrt来举例，有几种办法来分配DHCP地址&lt;/p>
+&lt;h3 id="uci-设置">UCI 设置
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1=&amp;#34;mac&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1.mac=&amp;#34;2A:AA:13:2C:D8:59&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1.networkid=&amp;#34;vpn&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci add_list dhcp.mac1.dhcp_option=&amp;#34;3,192.168.50.10&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci add_list dhcp.mac1.dhcp_option=&amp;#34;6,192.168.50.10&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci commit dhcp
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>请参考：https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol#Options&lt;/p>
+&lt;p>&lt;code>dhcp_option=&amp;quot;3,192.168.50.10&amp;quot;&lt;/code>这个是网关
+&lt;code>dhcp_option=&amp;quot;3,192.168.50.10&amp;quot;&lt;/code>这个是DNS&lt;/p>
+&lt;p>其实这些都被uci写进了 &lt;code>/etc/config/dhcp&lt;/code>，之后需要修改就可以直接改文件。&lt;/p>
+&lt;h3 id="dnsmasq-设置">DNSMASQ 设置
+&lt;/h3>&lt;p>其实没什么区别，反正提供DHCP的是DNSMASQ。&lt;/p>
+&lt;p>dnsmasq的配置文件是&lt;code>/etc/dnsmasq.conf&lt;/code>。可以直接改。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">dhcp-host=2A:AA:13:2C:D8:59,set:OTHER
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">dhcp-option=tag:OTHER,3,192.168.50.10
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">dhcp-option=tag:OTHER,6,192.168.50.10
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item></channel></rss>
