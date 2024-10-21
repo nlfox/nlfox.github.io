@@ -22,7 +22,7 @@ Proton GE is community maintained Proton, provide better compatibility than orig
 
 https://www.rockpapershotgun.com/how-to-install-proton-ge-on-the-steam-deck
 
-Note: ProtonGE > 9.10 fixed a lot of video related issue, upgrade and enjoy!
+Note: ProtonGE >= 9.10 fixed a lot of video related issue, upgrade and enjoy!
 
 ### Define Locale for a Game
 
@@ -31,7 +31,7 @@ You can use this script:
 https://gist.github.com/XargonWan/cc660daf92c224b7241cbf5a2bf12c47
 
 
-It's a bit old so I recommend it to run line by line. 
+It's a bit old so I recommend run the command line by line instead of all at once.
 This way in case of issue you won't mess things up.
 After this you can put  `LANG=ja_JP.UTF-8 %command%` to launch configurations.
 
