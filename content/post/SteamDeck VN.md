@@ -86,9 +86,28 @@ Some game simply can't be run in Linux due to anti-cheat. So still worth to inst
 This guide explains most of it:
 https://www.makeuseof.com/how-to-dual-boot-steam-deck-windows/
 
+#### Dual boot manager
+
+**Clover Boot Manager**  works great.
+
+#### Steamdeck windows drivers
+
+Refer to this official page for drivers: https://help.steampowered.com/en/faqs/view/6121-ECCD-D643-BAA8
 
 
-Refer to this for drivers: https://help.steampowered.com/en/faqs/view/6121-ECCD-D643-BAA8
+#### Steamdeck sidebar on Windows
+
+For steamdeck like sidebar experience, I recommand https://github.com/Valkirie/HandheldCompanion.
+
+#### SteamInput for Desktop mode
+
+I personally don't recommand it's desktop mode control tho, instead I recommand the one built-in steam: Steam on windows can define desktop layout, you can check the option below:
+
+```
+Steam -> Settings -> Controller -> Desktop Configuration 
+```
+
+to set it up.
 
 
 
