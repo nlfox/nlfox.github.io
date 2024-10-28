@@ -32,7 +32,7 @@ uci commit dhcp
 请参考：https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol#Options
 
 `dhcp_option="3,192.168.50.10"`这个是网关
-`dhcp_option="3,192.168.50.10"`这个是DNS
+`dhcp_option="6,192.168.50.10"`这个是DNS
 
 其实这些都被uci写进了 `/etc/config/dhcp`，之后需要修改就可以直接改文件。
 

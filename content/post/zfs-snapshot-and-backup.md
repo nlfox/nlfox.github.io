@@ -88,7 +88,7 @@ To reguarly run `hd-idle`, use it's own service.
 
 `vim /etc/default/hd-idle`
 
-Below opts with make `hd-idle` sleep device after 600s if no activity.
+Below opts will make `hd-idle` sleep device after 600s if no activity.
 
 ```
 HD_IDLE_OPTS="-i 600 -l /var/log/hd-idle.log"

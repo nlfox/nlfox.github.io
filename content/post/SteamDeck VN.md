@@ -41,16 +41,6 @@ zh_CN.UTF-8
 zh_TW.UTF-8
 ```
 
-### Better manage your library on TF card
-
-I recommend NTFS or exFAT on TF card. It would be a trouble to load ext3/4 partition on Windows (if you ever want to install Windows dual boot on SteamDeck). 
-
-https://github.com/scawp/Steam-Deck.Mount-External-Drive
-
-Above script should help auto mount shared drive between Windows and SteamOS.
-
-If you move your game library to TF card, then it can be read from both Windows and SteamOS seamlessly.
-
 
 ### Game crash on Fullscreen mode
 
@@ -94,22 +84,31 @@ https://www.makeuseof.com/how-to-dual-boot-steam-deck-windows/
 
 Refer to this official page for drivers: https://help.steampowered.com/en/faqs/view/6121-ECCD-D643-BAA8
 
-
 #### Steamdeck sidebar on Windows
 
 For steamdeck like sidebar experience, I recommand https://github.com/Valkirie/HandheldCompanion.
 
 #### SteamInput for Desktop mode
 
-I personally don't recommand it's desktop mode control tho, instead I recommand the one built-in steam: Steam on windows can define desktop layout, you can check the option below:
+I personally do not recommand it's desktop mode control tho, instead I recommand the one built-in steam: Steam on windows can define desktop layout, you can check the option below:
 
 ```
 Steam -> Settings -> Controller -> Desktop Configuration 
 ```
 
-to set it up.
+to set it up. It will provide more flexibility.
 
+#### Share your SteamLibrary with Linux
 
+Given VNs are not performance sensitive, we can put them in TF card so that we can share between Linux and Windows.
+
+I recommend NTFS or exFAT on TF card. It would be a trouble to load ext3/4 partition on Windows.
+
+https://github.com/scawp/Steam-Deck.Mount-External-Drive
+
+Above script should help auto mount shared drive between Windows and SteamOS.
+
+Afther that, if you move your game library to TF card, then it can be read from both Windows and SteamOS seamlessly.
 
 
 ## How to Debug 

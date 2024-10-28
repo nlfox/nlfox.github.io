@@ -12,11 +12,11 @@ tags:
 ---
 
 
-Recently I changed my NAS hardware, I found that for my need, I don't actully need the orginal RAID-Z1 for the extra storage, instead I want my data to be more secure with mirror vdev (basically RAID1 in ZFS term). 
+Recently I changed my NAS hardware, I found that as per my need, I don't actully need the orginal RAID-Z1 for the extra storage, instead I want my data to as secure as possible with mirror vdev (basically RAID1 in ZFS term). 
 
 I re-ordered my storage architect to 3 layers. 
 
-First layer is a SSD RAID1 zpool that runs Proxmox (HostOS) along with frequently accessed application data (like SQLite etc).
+First layer is a SSD RAID1 zpool that runs Proxmox (HostOS) along with frequently accessed application data (like SQLite, VMDisk etc).
 
 Second layer is HDD RAID1 zpool, holds all rest data that's not frequently accessed.
 
@@ -44,14 +44,14 @@ Find the right disk:
 ls -l /dev/disk/by-id | grep -v part
 ```
 
-Then for the new partition 3, mirror it with existing disk:
+Then for the new partition 3, attach it to existing ZFS pool as mirroring vdev:
 
 ```bash
 zpool attach rpool nvme-eui.<existing>-part3 nvme-eui.<new>-part3
 ```
-Note that the order is important! Existing one should be the first.
+Note that the order is important! Existing one should be the first argument, otherwise it might fail.
 
-Only partition 3 given it's the root filesystem.
+We only want to mirror partition 3 given it's the root filesystem.
 
 
 Then use `proxmox-boot-tool` to initialize grub on it.
