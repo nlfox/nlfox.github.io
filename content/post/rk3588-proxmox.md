@@ -12,7 +12,7 @@ tags:
 
 ## Why Arm & Why RK3588
 
-It's efficient with all the things I need, and it saves me a cup of coffee per month. Why not?
+It's efficient at a unbeatable level compared to x64, with all the things I need. Idle at 5w, it can save me a cup of coffee per month. Why not?
 
 ## Download system image
 

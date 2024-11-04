@@ -1,7 +1,7 @@
 ---
 title: Delay mount until host is available
 description: 
-date: 2024-11-1
+date: 2024-11-01
 categories:
     - HomeLab
 tags:
