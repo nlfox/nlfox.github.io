@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Raid on nlfox's Blog</title><link>https://blog.nlfox.net/tags/raid/</link><description>Recent content in Raid on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 27 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/tags/raid/index.xml" rel="self" type="application/rss+xml"/><item><title>ZFS Mirror vdev for existing storage</title><link>https://blog.nlfox.net/p/zfs-mirror-vdev-for-existing-storage/</link><pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/zfs-mirror-vdev-for-existing-storage/</guid><description>&lt;img src="https://wiki.alopex.li/vdev.png" alt="Featured image of post ZFS Mirror vdev for existing storage" />&lt;p>Recently I changed my NAS hardware, I found that as per my need, I don&amp;rsquo;t actully need the orginal RAID-Z1 for the extra storage, instead I want my data to as secure as possible with mirror vdev (basically RAID1 in ZFS term).&lt;/p>
+&lt;p>I re-ordered my storage architect to 3 layers.&lt;/p>
+&lt;p>First layer is a SSD RAID1 zpool that runs Proxmox (HostOS) along with frequently accessed application data (like SQLite, VMDisk etc).&lt;/p>
+&lt;p>Second layer is HDD RAID1 zpool, holds all rest data that&amp;rsquo;s not frequently accessed.&lt;/p>
+&lt;p>Third layer is a portable HDD serve as a cold backup for snapshots from both 1st and 2nd layer.&lt;/p>
+&lt;h2 id="add-vdev-to-mirror-existing-storage-with-proxmox-boot">Add vdev to mirror existing storage with proxmox boot
+&lt;/h2>&lt;p>So if a disk is used for proxmox root mountpoint, it will be partitioned into 3: BIOS, EFI, and actual data.&lt;/p>
+&lt;p>So to add a SSD to existing proxmox pool, there are some extra work need to be done to copy the first 2 partition.&lt;/p>
+&lt;p>Ref: &lt;a class="link" href="https://pve.proxmox.com/wiki/ZFS_on_Linux" target="_blank" rel="noopener"
+>https://pve.proxmox.com/wiki/ZFS_on_Linux&lt;/a>&lt;/p>
+&lt;p>The first steps of copying the partition table, reissuing GUIDs and replacing the ZFS partition are the same.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sgdisk &amp;lt;healthy bootable device&amp;gt; -R &amp;lt;new device&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sgdisk -G &amp;lt;new device&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Find the right disk:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">ls -l /dev/disk/by-id &lt;span class="p">|&lt;/span> grep -v part
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Then for the new partition 3, attach it to existing ZFS pool as mirroring vdev:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">zpool attach rpool nvme-eui.&amp;lt;existing&amp;gt;-part3 nvme-eui.&amp;lt;new&amp;gt;-part3
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Note that the order is important! Existing one should be the first argument, otherwise it might fail.&lt;/p>
+&lt;p>We only want to mirror partition 3 given it&amp;rsquo;s the root filesystem.&lt;/p>
+&lt;p>Then use &lt;code>proxmox-boot-tool&lt;/code> to initialize grub on it.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">proxmox-boot-tool format /dev/nvme1n1p2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">proxmox-boot-tool init /dev/nvme1n1p2 grub
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item></channel></rss>
