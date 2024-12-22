@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Grub on nlfox's Blog</title><link>https://blog.nlfox.net/tags/grub/</link><description>Recent content in Grub on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 24 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/tags/grub/index.xml" rel="self" type="application/rss+xml"/><item><title>PVE 8.2 Setup Notes</title><link>https://blog.nlfox.net/p/pve-8.2-setup-notes/</link><pubDate>Thu, 24 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/pve-8.2-setup-notes/</guid><description>&lt;h2 id="download">Download
+&lt;/h2>&lt;p>I downloaded 8.2 from &lt;a class="link" href="https://www.proxmox.com/en/downloads" target="_blank" rel="noopener"
+>https://www.proxmox.com/en/downloads&lt;/a>&lt;/p>
+&lt;h2 id="bootable-device">Bootable Device
+&lt;/h2>&lt;p>I used Ventoy &lt;a class="link" href="https://ventoy.net/en/index.html" target="_blank" rel="noopener"
+>https://ventoy.net/en/index.html&lt;/a>. The experience was great.&lt;/p>
+&lt;p>It&amp;rsquo;s based on Grub2. Grub2 have support for ISO long ago, finally someone wrote some good wrapper.&lt;/p>
+&lt;p>Instead of dd, it can have multiple image and boot from any of it. But this actually caused me some issue, so for Proxmox try &lt;em>NOT&lt;/em> to use Ventoy!&lt;/p>
+&lt;h2 id="install-iso-stuck-waiting-for-dev">Install ISO stuck &lt;code>Waiting for /dev&lt;/code>
+&lt;/h2>&lt;p>Using Ventoy, I boot into Proxmox VE ISO. But it stuck immediately&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;#34;Waiting for /dev to be fully populated...&amp;#34;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>It&amp;rsquo;s due to the graphic driver.&lt;/p>
+&lt;p>Press &amp;rsquo;e&amp;rsquo; on the selection screen, GRUB will let you edit the start up parameters.&lt;/p>
+&lt;p>Removing after the &lt;code>ro,quiet&lt;/code> parameter, add &lt;code>nomodeset&lt;/code>. Press &amp;lsquo;Ctrl + X&amp;rsquo; to boot selected entry. After that finally saw the install prompt.&lt;/p>
+&lt;h2 id="new-install-using-zfs-as-root-wont-start-up">New install using ZFS as root won&amp;rsquo;t start up
+&lt;/h2>&lt;p>Another issue I encounter is after finished the install and rebooted, Proxmox stuck when loading the whole system. The message spamming whole screen didn&amp;rsquo;t help, there is no error message at all.&lt;/p>
+&lt;p>This could due to proxmox don&amp;rsquo;t use classic GRUB2 as boot manager. The only way to force it install Grub2 is disable fast boot, enable legacy boot options and disable UEFI boot.&lt;/p>
+&lt;p>After re-install with above option, it should be able to boot properly.&lt;/p>
+&lt;h2 id="remove-subscription-pop-up">Remove subscription pop-up
+&lt;/h2>&lt;p>Quick one-liner&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">sed&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">Ezi&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">bak&lt;/span> &lt;span class="s2">&amp;#34;s/(Ext.Msg.show\(\{\s+title: gettext\(&amp;#39;No valid sub)/void\(\{ \/\/&lt;/span>&lt;span class="se">\1&lt;/span>&lt;span class="s2">/g&amp;#34;&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">usr&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">share&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">javascript&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">proxmox&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">widget&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">toolkit&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">proxmoxlib&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">js&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">systemctl&lt;/span> &lt;span class="n">restart&lt;/span> &lt;span class="n">pveproxy&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">service&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="remove-paid-repo">Remove paid Repo
+&lt;/h2>&lt;p>Move &lt;code>/etc/apt/sources.list.d/pve-enterprise.list&lt;/code> away.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">mv /etc/apt/sources.list.d/pve-enterprise.list /etc/apt/sources.list.d/pve-enterprise.list.bak
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>For &lt;code>/etc/apt/sources.list.d/ceph.list&lt;/code>, my content:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">download&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">proxmox&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">com&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">ceph&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">quincy&lt;/span> &lt;span class="n">bookworm&lt;/span> &lt;span class="n">main&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>My &lt;code>/etc/apt/sources.list&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">ftp&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">us&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">ftp&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">us&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">updates&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># security updates&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">security&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">security&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">download&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">proxmox&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">com&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">pve&lt;/span> &lt;span class="n">bookworm&lt;/span> &lt;span class="n">pve&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">no&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">subscription&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">deb&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">backports&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span> &lt;span class="n">non&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">free&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">src&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">deb&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">backports&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span> &lt;span class="n">non&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">free&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item></channel></rss>

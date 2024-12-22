@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Arm on nlfox's Blog</title><link>https://blog.nlfox.net/tags/arm/</link><description>Recent content in Arm on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 29 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/tags/arm/index.xml" rel="self" type="application/rss+xml"/><item><title>RK3588 PVE 8.2 Setup Notes</title><link>https://blog.nlfox.net/p/rk3588-pve-8.2-setup-notes/</link><pubDate>Tue, 29 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/rk3588-pve-8.2-setup-notes/</guid><description>&lt;h2 id="why-arm--why-rk3588">Why Arm &amp;amp; Why RK3588
+&lt;/h2>&lt;p>It&amp;rsquo;s efficient at a unbeatable level compared to x64, with all the things I need. Idle at 5w, it can save me a cup of coffee per month. Why not?&lt;/p>
+&lt;h2 id="download-system-image">Download system image
+&lt;/h2>&lt;p>I use Armbian
+&lt;a class="link" href="https://www.armbian.com/orange-pi-5-plus/" target="_blank" rel="noopener"
+>https://www.armbian.com/orange-pi-5-plus/&lt;/a>&lt;/p>
+&lt;p>As recommanded, I use Etcher to flash image to TF card, you should be able to boot from TF card.&lt;/p>
+&lt;h2 id="boot-from-m2-ssd">Boot from M2 SSD
+&lt;/h2>&lt;p>Use Etcher again to write to SSD, this way you will have a OS to boot from once remove TF card.&lt;/p>
+&lt;p>Execute &lt;code>armbian-install&lt;/code>, and choose &lt;code>Install/Update the bootloader on MTD Flash&lt;/code>&lt;/p>
+&lt;p>Once finished, you can power off and remove TF card.&lt;/p>
+&lt;h2 id="install-proxmox-ve-base-on-armbian">Install Proxmox VE base on armbian
+&lt;/h2>&lt;p>Armbian is based on Debian Bookworm, so is a good base for Proxmox VE. Below guide contains everything needed for it to work.&lt;/p>
+&lt;p>&lt;a class="link" href="https://github.com/jiangcuo/Proxmox-Port/wiki/Install-Proxmox-VE-on-Debian-bookworm" target="_blank" rel="noopener"
+>https://github.com/jiangcuo/Proxmox-Port/wiki/Install-Proxmox-VE-on-Debian-bookworm&lt;/a>&lt;/p>
+&lt;h2 id="start-your-first-arm64-vm-on-rk3588">Start your first Arm64 VM on RK3588
+&lt;/h2>&lt;p>Below is my config for my primary Ubuntu Server just for reference.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;gt; # cat /etc/pve/nodes/orangepi5-plus/qemu-server/100.conf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">affinity: 4-7
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">bios: ovmf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">boot: order=scsi0;scsi2;net0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cores: 4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cpu: max
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">efidisk0: local:100/vm-100-disk-0.qcow2,efitype=4m,pre-enrolled-keys=1,size=64M
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">memory: 16384
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net0: virtio=BC:24:11:20:D3:D2,bridge=vmbr0,firewall=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net1: virtio=BC:24:11:95:6C:7A,bridge=vmbr1,firewall=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">numa: 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">onboot: 1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ostype: l26
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsi0: local:100/vm-100-disk-1.qcow2,iothread=1,size=32G
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsi1: local:100/vm-100-disk-2.qcow2,iothread=1,size=1T
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsi2: local:iso/ubuntu-24.04.1-live-server-arm64.iso,media=cdrom,size=2436748K
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsihw: virtio-scsi-single
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sockets: 1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">vga: ramfb
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Arm KVM support is super limited, so the config is almost fixed.&lt;/p>
+&lt;p>CPU has to be &lt;code>max&lt;/code>, BIOS has to be &lt;code>OVMF&lt;/code>, vga has to be &lt;code>ramfb&lt;/code>, SCSI and network driver has to be &lt;code>VirtIO&lt;/code>.&lt;/p>
+&lt;p>CPU affinity must be set. KVM won&amp;rsquo;t run if you mix A76 and A55 cores, so max CPU cores you can use for VM is 4.&lt;/p>
+&lt;p>Big core: 4-7, Small core: 0-3. In this VM I use all Big cores.&lt;/p>
+&lt;p>Side note: I do recommand general arm64 images instead of RK3588 specific for VM use, better compatibility, less compiling.&lt;/p>
+&lt;h2 id="pass-through-devices">Pass-through Devices
+&lt;/h2>&lt;p>Short answer is, right now there is no great way to pass through devices in KVM given the limited IOMMU support.&lt;/p>
+&lt;p>So the only way to pass-through GPU &amp;amp; NPU use mount bind in LXC container.&lt;/p>
+&lt;h2 id="bind-mount-inside-lxc-container">Bind mount inside LXC container
+&lt;/h2>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">arch: arm64
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">features: nesting=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">hostname: CT101
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">memory: 16384
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">nameserver: 192.168.50.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net0: name=eth0,bridge=vmbr0,firewall=1,gw=192.168.50.1,hwaddr=BC:24:11:84:B6:82,ip=192.168.50.140/24,type=veth
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net1: name=eth1,bridge=vmbr1,firewall=1,hwaddr=BC:24:11:5B:7E:AD,ip=10.10.10.3/24,type=veth
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">onboot: 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ostype: ubuntu
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">rootfs: local:101/vm-101-disk-0.raw,size=32G
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">startup: order=2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">swap: 4096
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/mali0 dev/mali0 none bind,optional,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/dma_heap dev/dma_heap none bind,optional,create=dir
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/rga dev/rga none bind,optional,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/mpp_service dev/mpp_service none bind,optional,create=file
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Above is sample config that I used for bind mount to pass through a GPU &amp;amp; corresponding drivers.&lt;/p>
+&lt;h2 id="tbd-pcie-passthrough-for-rk3588">TBD: PCIE passthrough for RK3588
+&lt;/h2>&lt;p>There is a actually a guide to enable PCIE passthrough,&lt;/p>
+&lt;p>&lt;a class="link" href="https://dl.radxa.com/users/dev/Rockchip_PCIe_Virtualization_Developer_Guide_CN.pdf" target="_blank" rel="noopener"
+>https://dl.radxa.com/users/dev/Rockchip_PCIe_Virtualization_Developer_Guide_CN.pdf&lt;/a>&lt;/p>
+&lt;p>I don&amp;rsquo;t need it that much, if I need it someday will try to make it work.&lt;/p></description></item></channel></rss>
