@@ -102,13 +102,22 @@ to set it up. It will provide more flexibility.
 
 Given VNs are not performance sensitive, we can put them in TF card so that we can share between Linux and Windows.
 
-I recommend NTFS or exFAT on TF card. It would be a trouble to load ext3/4 partition on Windows.
+##### NTFS
 
 https://github.com/scawp/Steam-Deck.Mount-External-Drive
 
 Above script should help auto mount shared drive between Windows and SteamOS.
 
 Afther that, if you move your game library to TF card, then it can be read from both Windows and SteamOS seamlessly.
+
+##### BTRFS
+
+Since windows have a good BTRFS driver now, BTRFS might be another good option. It will have better performance compared to NTFS/exFAT.
+
+Driver: https://github.com/maharmstone/btrfs
+
+In steamOS, you can use same script as NTFS to auto load BTRFS https://github.com/scawp/Steam-Deck.Mount-External-Drive
+
 
 
 ## How to Debug 
