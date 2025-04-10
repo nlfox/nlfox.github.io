@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Networking on nlfox's Blog</title><link>https://blog.nlfox.net/categories/networking/</link><description>Recent content in Networking on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 20 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/categories/networking/index.xml" rel="self" type="application/rss+xml"/><item><title>自动地域分流代理</title><link>https://blog.nlfox.net/p/%E8%87%AA%E5%8A%A8%E5%9C%B0%E5%9F%9F%E5%88%86%E6%B5%81%E4%BB%A3%E7%90%86/</link><pubDate>Sun, 20 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/%E8%87%AA%E5%8A%A8%E5%9C%B0%E5%9F%9F%E5%88%86%E6%B5%81%E4%BB%A3%E7%90%86/</guid><description>&lt;p>我对翻回墙内的需求很少，但是最近有些奇怪的app有地区锁，于是就顺便把在国内翻墙的东西给反向拿出来了，记录一下，for my own record。&lt;/p>
+&lt;h2 id="how-and-why">How and Why
+&lt;/h2>&lt;p>首先，基本的想法是，我们需要两级的分流，第一级是DNS。现代的网站通过DNS来进行分流以及负载均衡的情况非常普遍。如果只靠IP地理位置来走代理，很容易出现的情况就是，由于DNS查询的地区和实际访问的地区不同，你并不会被DNS分配到想要的endpoint。例如，某个qq.com的子域名，如果用美国IP访问，会返回香港的CDN地址，绕过了IP地址代理规则，导致绕过地域锁失败。&lt;/p>
+&lt;h2 id="where-to-find-rule-data">Where to find rule data
+&lt;/h2>&lt;p>当然我们指望自己写规则不现实，所以需要一些第三方维护的规则文件。我选用的是下面这个源：&lt;/p>
+&lt;p>&lt;a class="link" href="https://github.com/Loyalsoldier/v2ray-rules-dat" target="_blank" rel="noopener"
+>https://github.com/Loyalsoldier/v2ray-rules-dat&lt;/a>&lt;/p>
+&lt;h2 id="solutions">Solutions
+&lt;/h2>&lt;p>现在有很多种成熟的一体化解决方案，我自己用的是Clash。&lt;/p>
+&lt;h3 id="clash-配置">Clash 配置
+&lt;/h3>&lt;p>Clash会接管DNS，所以可以做到DNS分流。并且由于Clash也自带了以上的数据库，所以配置起来比较简单。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">dns&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">enable&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">listen&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">0.0.0.0&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="m">53&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">nameserver&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">tls://8.8.4.4&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># GoogleDNS&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">tls://208.67.222.222&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># OpenDNS&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">nameserver-policy&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">geosite:cn&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="m">114.114.114.114&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">rules&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">GEOSITE,cn,Proxy&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">GEOIP,cn,Proxy&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>GEOSITE负责的是中国大陆的域名。 DNS的部分的大意就是默认走GoogleDNS or OpenDNS，如果DNS请求符合GEOSITE:CN，就使用114的DNS来解析。而114DNS由于是中国大陆的IP，会走中国大陆的代理来访问，保证获得正确的结果。&lt;/p>
+&lt;p>当然凡事都会有例外，比如我遇到的是某个屎黄色论坛把我代理IP给ban了，于是我就在rules顶端加了一行规则让屎黄色论坛走直连。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">DOMAIN-SUFFIX,178.com,DIRECT&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>DHCP自定义设备网关和DNS</title><link>https://blog.nlfox.net/p/dhcp%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AE%BE%E5%A4%87%E7%BD%91%E5%85%B3%E5%92%8Cdns/</link><pubDate>Fri, 11 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/dhcp%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AE%BE%E5%A4%87%E7%BD%91%E5%85%B3%E5%92%8Cdns/</guid><description>&lt;p>在设置完软路由（旁路由）之后，需要修改DHCP选项让软路由来做主要的路由。
+但是大部分时候并不想让所有设备都走代理，一个一个设置静态ip太麻烦，而且有些设备并不能设置静态ip。&lt;/p>
+&lt;p>每个设备加入网络的时候会发一个DHCP广播(DISCOVER) 来请求ip。所以从原理上来讲，dhcp server肯定能通过不同的mac地址来分配DHCP地址。&lt;/p>
+&lt;p>以OpenWrt来举例，有几种办法来分配DHCP地址&lt;/p>
+&lt;h3 id="uci-设置">UCI 设置
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1=&amp;#34;mac&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1.mac=&amp;#34;2A:AA:13:2C:D8:59&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1.networkid=&amp;#34;vpn&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci add_list dhcp.mac1.dhcp_option=&amp;#34;3,192.168.50.10&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci add_list dhcp.mac1.dhcp_option=&amp;#34;6,192.168.50.10&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci commit dhcp
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>请参考：https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol#Options&lt;/p>
+&lt;p>&lt;code>dhcp_option=&amp;quot;3,192.168.50.10&amp;quot;&lt;/code>这个是网关
+&lt;code>dhcp_option=&amp;quot;6,192.168.50.10&amp;quot;&lt;/code>这个是DNS&lt;/p>
+&lt;p>其实这些都被uci写进了 &lt;code>/etc/config/dhcp&lt;/code>，之后需要修改就可以直接改文件。&lt;/p>
+&lt;h3 id="dnsmasq-设置">DNSMASQ 设置
+&lt;/h3>&lt;p>其实没什么区别，反正提供DHCP的是DNSMASQ。&lt;/p>
+&lt;p>dnsmasq的配置文件是&lt;code>/etc/dnsmasq.conf&lt;/code>。可以直接改。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">dhcp-host=2A:AA:13:2C:D8:59,set:OTHER
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">dhcp-option=tag:OTHER,3,192.168.50.10
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">dhcp-option=tag:OTHER,6,192.168.50.10
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>PVE LXC OpenWRT 单网口旁路由设置</title><link>https://blog.nlfox.net/p/pve-lxc-openwrt-%E5%8D%95%E7%BD%91%E5%8F%A3%E6%97%81%E8%B7%AF%E7%94%B1%E8%AE%BE%E7%BD%AE/</link><pubDate>Tue, 10 Sep 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/pve-lxc-openwrt-%E5%8D%95%E7%BD%91%E5%8F%A3%E6%97%81%E8%B7%AF%E7%94%B1%E8%AE%BE%E7%BD%AE/</guid><description>&lt;img src="https://upload.wikimedia.org/wikipedia/commons/8/84/OpenWrt_Logo.svg" alt="Featured image of post PVE LXC OpenWRT 单网口旁路由设置" />&lt;p>先下载openwrt，下载官方rootfs就行&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">https&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">downloads&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">openwrt&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">releases&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mf">23.05&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">targets&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">x86&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mi">64&lt;/span>&lt;span class="o">/&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">wget&lt;/span> &lt;span class="n">https&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">downloads&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">openwrt&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">releases&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mf">23.05&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">targets&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">x86&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mi">64&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">openwrt&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mf">23.05&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">x86&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">64&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">rootfs&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">tar&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">gz&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上传到PVE, 创建模板：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">pct create 101 local:vztmpl/openwrt-23.05.2-x86-64-rootfs.tar.gz --rootfs local-lvm:1 --ostype unmanaged --hostname OP --arch amd64 --cores 1 --memory 1024 --swap 0 -net0 bridge=vmbr0,name=eth0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>编辑模板，加入最下面几行&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">features: nesting=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.include: /usr/share/lxc/config/openwrt.common.conf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cgroup2.devices.allow: c 108:0 rwm
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/ppp dev/ppp none bind,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cap.drop:
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>注意 &lt;code>features: nesting=1&lt;/code>， 没有nesting会导致dnsmasq启动失败&lt;/p>
+&lt;p>最终看起来&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">arch: amd64
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cores: 1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">features: nesting=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">hostname: OP
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">memory: 1024
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net0: name=eth0,bridge=vmbr0,hwaddr=BC:24:11:3B:3D:8D,type=veth
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ostype: unmanaged
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">rootfs: local-lvm:vm-101-disk-0,size=1G
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">swap: 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.include: /usr/share/lxc/config/openwrt.common.conf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cgroup2.devices.allow: c 108:0 rwm
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/ppp dev/ppp none bind,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cap.drop:
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>之后启动，首先肯定连不上LuCI，因为网络设定以及防火墙设定，先修改 &lt;code>/etc/config/network&lt;/code>&lt;/p>
+&lt;p>&lt;code>vim /etc/config/network&lt;/code>&lt;/p>
+&lt;p>看起来像这样&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">config interface &amp;#39;loopback&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option device &amp;#39;lo&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option proto &amp;#39;static&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option ipaddr &amp;#39;127.0.0.1&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option netmask &amp;#39;255.0.0.0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">config globals &amp;#39;globals&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option ula_prefix &amp;#39;fd3f:736d:11c4::/48&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">config device
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option name &amp;#39;eth0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">config interface &amp;#39;lan1&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option proto &amp;#39;static&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option device &amp;#39;eth0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option ipaddr &amp;#39;192.168.101.100&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option netmask &amp;#39;255.255.255.0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option gateway &amp;#39;192.168.101.1&amp;#39;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>UI 设置，记得加入防火墙区域lan：&lt;/p>
+&lt;p>![[Pasted image 20240206155928.png]]&lt;/p>
+&lt;p>或者 &lt;code>vim /etc/config/firewall&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">config zone
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option name &amp;#39;lan&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option input &amp;#39;ACCEPT&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option output &amp;#39;ACCEPT&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option forward &amp;#39;ACCEPT&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option network &amp;#39;lan1 utun&amp;#39;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后重启，能访问UI了&lt;/p>
+&lt;h3 id="nftables-旁路由设置">nftables 旁路由设置
+&lt;/h3>&lt;p>大部分文档还停留在 &lt;code>iptables&lt;/code>，现在OpenWRT都已经迁移到 &lt;code>nftables&lt;/code> 了已经，设置应该如下&lt;/p>
+&lt;p>![[Pasted image 20240206161621.png]]&lt;/p>
+&lt;p>反正就是需要一个 &lt;code>MASQUERADE&lt;/code>, 目标和源地址都任意。&lt;/p>
+&lt;h3 id="openwrt-opkg-设置">OpenWRT OPKG 设置
+&lt;/h3>&lt;p>首先换成国内源：https://developer.aliyun.com/mirror/openwrt
+命令：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">sed&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="s1">&amp;#39;s_downloads.openwrt.org_mirrors.aliyun.com/openwrt_&amp;#39;&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">etc&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">opkg&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">distfeeds&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">conf&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>之后安装点必要的包&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">opkg update
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">opkg install luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-opkg-zh-cn
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="openclash-安装">OpenClash 安装
+&lt;/h3>&lt;p>&lt;a class="link" href="https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85" target="_blank" rel="noopener"
+>https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85&lt;/a>
+&lt;a class="link" href="https://github.com/vernesong/OpenClash/releases" target="_blank" rel="noopener"
+>https://github.com/vernesong/OpenClash/releases&lt;/a>&lt;/p>
+&lt;p>按以上两个链接安装OpenClash&lt;/p>
+&lt;p>由于 &lt;code>dnsmasq&lt;/code> 会和 &lt;code>dnsmasq-full&lt;/code> 撞车，于是先卸载dnsmasq. 之后再用下面的命令安装依赖&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">opkg install coreutils-nohup bash dnsmasq-full curl ca-certificates ipset ip-full libcap libcap-bin ruby ruby-yaml kmod-tun kmod-inet-diag unzip kmod-nft-tproxy luci-compat luci luci-base
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>注意SCP现在走SFTP，需要加上 &lt;code>-O&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">scp&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">O&lt;/span> &lt;span class="o">~/&lt;/span>&lt;span class="n">Downloads&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">clash_meta&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="err">@&lt;/span>&lt;span class="mf">192.168&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mf">101.100&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">etc&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">openclash&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">core&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="openclash-side-note">OpenClash Side Note
+&lt;/h3>&lt;p>踩了个坑，因为OpenClash的DNS不work。于是额外装了SmartDNS,
+设置DNS OverHTTPS, 使用 CloudFlare dns：
+然后dnsmasq转发即可。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">1.1.1.1/dns-query
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="ref">Ref
+&lt;/h2>&lt;ol>
+&lt;li>PVE LXC Openwrt 设置： &lt;a class="link" href="https://dev.leiyanhui.com/openwrt/lxc-mian-op/" target="_blank" rel="noopener"
+>https://dev.leiyanhui.com/openwrt/lxc-mian-op/&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.aliyun.com/mirror/openwrt" target="_blank" rel="noopener"
+>https://developer.aliyun.com/mirror/openwrt&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85" target="_blank" rel="noopener"
+>https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85&lt;/a>&lt;/li>
+&lt;/ol></description></item></channel></rss>
