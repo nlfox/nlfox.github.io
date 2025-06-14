@@ -1,0 +1,821 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Proxmox on nlfox's Blog</title><link>https://blog.nlfox.net/tags/proxmox/</link><description>Recent content in Proxmox on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Fri, 01 Nov 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/tags/proxmox/index.xml" rel="self" type="application/rss+xml"/><item><title>Delay mount until host is available</title><link>https://blog.nlfox.net/p/delay-mount-until-host-is-available/</link><pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/delay-mount-until-host-is-available/</guid><description>&lt;p>There is one problem where the VM that&amp;rsquo;s sharing storage via NFS start up take time, another VM which takes dependency on the storage shared won&amp;rsquo;t be able to mount properly using &lt;code>/etc/fstab&lt;/code>.&lt;/p>
+&lt;p>Unfortunately FSTAB don&amp;rsquo;t have the flexibility to configure delay, so we need a script during start up.&lt;/p>
+&lt;h3 id="mount-script">Mount script
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="cp">#!/bin/bash
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cp">&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">TARGET_IP&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;10.10.10.2&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">MOUNT_POINT&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;/tank&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">NFS_SHARE&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;10.10.10.2:/tank&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">until&lt;/span> ping -c &lt;span class="m">1&lt;/span> -W &lt;span class="m">1&lt;/span> &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$TARGET_IP&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &amp;gt; /dev/null 2&amp;gt;&lt;span class="p">&amp;amp;&lt;/span>1&lt;span class="p">;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;Waiting for target IP &lt;/span>&lt;span class="nv">$TARGET_IP&lt;/span>&lt;span class="s2">...&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sleep &lt;span class="m">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">done&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mount -t nfs &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$NFS_SHARE&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$MOUNT_POINT&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="add-to-systemd">Add to Systemd
+&lt;/h3>&lt;p>Create a file in &lt;code>/etc/systemd/system/mount-tank.service&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">[Unit]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Description=Mount CIFS Share after Target IP is Available
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">After=network-online.target
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Wants=network-online.target
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[Service]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Type=oneshot
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ExecStart=/root/mount-tank.sh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">RemainAfterExit=true
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[Install]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">WantedBy=multi-user.target
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="delay-docker-start-up">Delay docker start up
+&lt;/h3>&lt;p>Edit docker service: &lt;code>systemctl edit docker.service&lt;/code>.&lt;/p>
+&lt;p>You can use a fix time delay like&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">[Service]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ExecStartPre=/bin/sleep 120
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Or use a &lt;code>RequiresMountsFor&lt;/code> option.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">[Unit]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">RequiresMountsFor=/tank/appdata/
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>RK3588 PVE 8.2 Setup Notes</title><link>https://blog.nlfox.net/p/rk3588-pve-8.2-setup-notes/</link><pubDate>Tue, 29 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/rk3588-pve-8.2-setup-notes/</guid><description>&lt;h2 id="why-arm--why-rk3588">Why Arm &amp;amp; Why RK3588
+&lt;/h2>&lt;p>It&amp;rsquo;s efficient at a unbeatable level compared to x64, with all the things I need. Idle at 5w, it can save me a cup of coffee per month. Why not?&lt;/p>
+&lt;h2 id="download-system-image">Download system image
+&lt;/h2>&lt;p>I use Armbian
+&lt;a class="link" href="https://www.armbian.com/orange-pi-5-plus/" target="_blank" rel="noopener"
+>https://www.armbian.com/orange-pi-5-plus/&lt;/a>&lt;/p>
+&lt;p>As recommanded, I use Etcher to flash image to TF card, you should be able to boot from TF card.&lt;/p>
+&lt;h2 id="boot-from-m2-ssd">Boot from M2 SSD
+&lt;/h2>&lt;p>Use Etcher again to write to SSD, this way you will have a OS to boot from once remove TF card.&lt;/p>
+&lt;p>Execute &lt;code>armbian-install&lt;/code>, and choose &lt;code>Install/Update the bootloader on MTD Flash&lt;/code>&lt;/p>
+&lt;p>Once finished, you can power off and remove TF card.&lt;/p>
+&lt;h2 id="install-proxmox-ve-base-on-armbian">Install Proxmox VE base on armbian
+&lt;/h2>&lt;p>Armbian is based on Debian Bookworm, so is a good base for Proxmox VE. Below guide contains everything needed for it to work.&lt;/p>
+&lt;p>&lt;a class="link" href="https://github.com/jiangcuo/Proxmox-Port/wiki/Install-Proxmox-VE-on-Debian-bookworm" target="_blank" rel="noopener"
+>https://github.com/jiangcuo/Proxmox-Port/wiki/Install-Proxmox-VE-on-Debian-bookworm&lt;/a>&lt;/p>
+&lt;h2 id="start-your-first-arm64-vm-on-rk3588">Start your first Arm64 VM on RK3588
+&lt;/h2>&lt;p>Below is my config for my primary Ubuntu Server just for reference.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;gt; # cat /etc/pve/nodes/orangepi5-plus/qemu-server/100.conf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">affinity: 4-7
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">bios: ovmf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">boot: order=scsi0;scsi2;net0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cores: 4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cpu: max
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">efidisk0: local:100/vm-100-disk-0.qcow2,efitype=4m,pre-enrolled-keys=1,size=64M
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">memory: 16384
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net0: virtio=BC:24:11:20:D3:D2,bridge=vmbr0,firewall=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net1: virtio=BC:24:11:95:6C:7A,bridge=vmbr1,firewall=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">numa: 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">onboot: 1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ostype: l26
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsi0: local:100/vm-100-disk-1.qcow2,iothread=1,size=32G
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsi1: local:100/vm-100-disk-2.qcow2,iothread=1,size=1T
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsi2: local:iso/ubuntu-24.04.1-live-server-arm64.iso,media=cdrom,size=2436748K
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">scsihw: virtio-scsi-single
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sockets: 1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">vga: ramfb
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Arm KVM support is super limited, so the config is almost fixed.&lt;/p>
+&lt;p>CPU has to be &lt;code>max&lt;/code>, BIOS has to be &lt;code>OVMF&lt;/code>, vga has to be &lt;code>ramfb&lt;/code>, SCSI and network driver has to be &lt;code>VirtIO&lt;/code>.&lt;/p>
+&lt;p>CPU affinity must be set. KVM won&amp;rsquo;t run if you mix A76 and A55 cores, so max CPU cores you can use for VM is 4.&lt;/p>
+&lt;p>Big core: 4-7, Small core: 0-3. In this VM I use all Big cores.&lt;/p>
+&lt;p>Side note: I do recommand general arm64 images instead of RK3588 specific for VM use, better compatibility, less compiling.&lt;/p>
+&lt;h2 id="pass-through-devices">Pass-through Devices
+&lt;/h2>&lt;p>Short answer is, right now there is no great way to pass through devices in KVM given the limited IOMMU support.&lt;/p>
+&lt;p>So the only way to pass-through GPU &amp;amp; NPU use mount bind in LXC container.&lt;/p>
+&lt;h2 id="bind-mount-inside-lxc-container">Bind mount inside LXC container
+&lt;/h2>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">arch: arm64
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">features: nesting=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">hostname: CT101
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">memory: 16384
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">nameserver: 192.168.50.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net0: name=eth0,bridge=vmbr0,firewall=1,gw=192.168.50.1,hwaddr=BC:24:11:84:B6:82,ip=192.168.50.140/24,type=veth
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net1: name=eth1,bridge=vmbr1,firewall=1,hwaddr=BC:24:11:5B:7E:AD,ip=10.10.10.3/24,type=veth
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">onboot: 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ostype: ubuntu
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">rootfs: local:101/vm-101-disk-0.raw,size=32G
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">startup: order=2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">swap: 4096
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/mali0 dev/mali0 none bind,optional,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/dma_heap dev/dma_heap none bind,optional,create=dir
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/rga dev/rga none bind,optional,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/mpp_service dev/mpp_service none bind,optional,create=file
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Above is sample config that I used for bind mount to pass through a GPU &amp;amp; corresponding drivers.&lt;/p>
+&lt;h2 id="tbd-pcie-passthrough-for-rk3588">TBD: PCIE passthrough for RK3588
+&lt;/h2>&lt;p>There is a actually a guide to enable PCIE passthrough,&lt;/p>
+&lt;p>&lt;a class="link" href="https://dl.radxa.com/users/dev/Rockchip_PCIe_Virtualization_Developer_Guide_CN.pdf" target="_blank" rel="noopener"
+>https://dl.radxa.com/users/dev/Rockchip_PCIe_Virtualization_Developer_Guide_CN.pdf&lt;/a>&lt;/p>
+&lt;p>I don&amp;rsquo;t need it that much, if I need it someday will try to make it work.&lt;/p></description></item><item><title>ZFS Mirror vdev for existing storage</title><link>https://blog.nlfox.net/p/zfs-mirror-vdev-for-existing-storage/</link><pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/zfs-mirror-vdev-for-existing-storage/</guid><description>&lt;img src="https://wiki.alopex.li/vdev.png" alt="Featured image of post ZFS Mirror vdev for existing storage" />&lt;p>Recently I changed my NAS hardware, I found that as per my need, I don&amp;rsquo;t actully need the orginal RAID-Z1 for the extra storage, instead I want my data to as secure as possible with mirror vdev (basically RAID1 in ZFS term).&lt;/p>
+&lt;p>I re-ordered my storage architect to 3 layers.&lt;/p>
+&lt;p>First layer is a SSD RAID1 zpool that runs Proxmox (HostOS) along with frequently accessed application data (like SQLite, VMDisk etc).&lt;/p>
+&lt;p>Second layer is HDD RAID1 zpool, holds all rest data that&amp;rsquo;s not frequently accessed.&lt;/p>
+&lt;p>Third layer is a portable HDD serve as a cold backup for snapshots from both 1st and 2nd layer.&lt;/p>
+&lt;h2 id="add-vdev-to-mirror-existing-storage-with-proxmox-boot">Add vdev to mirror existing storage with proxmox boot
+&lt;/h2>&lt;p>So if a disk is used for proxmox root mountpoint, it will be partitioned into 3: BIOS, EFI, and actual data.&lt;/p>
+&lt;p>So to add a SSD to existing proxmox pool, there are some extra work need to be done to copy the first 2 partition.&lt;/p>
+&lt;p>Ref: &lt;a class="link" href="https://pve.proxmox.com/wiki/ZFS_on_Linux" target="_blank" rel="noopener"
+>https://pve.proxmox.com/wiki/ZFS_on_Linux&lt;/a>&lt;/p>
+&lt;p>The first steps of copying the partition table, reissuing GUIDs and replacing the ZFS partition are the same.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sgdisk &amp;lt;healthy bootable device&amp;gt; -R &amp;lt;new device&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sgdisk -G &amp;lt;new device&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Find the right disk:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">ls -l /dev/disk/by-id &lt;span class="p">|&lt;/span> grep -v part
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Then for the new partition 3, attach it to existing ZFS pool as mirroring vdev:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">zpool attach rpool nvme-eui.&amp;lt;existing&amp;gt;-part3 nvme-eui.&amp;lt;new&amp;gt;-part3
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Note that the order is important! Existing one should be the first argument, otherwise it might fail.&lt;/p>
+&lt;p>We only want to mirror partition 3 given it&amp;rsquo;s the root filesystem.&lt;/p>
+&lt;p>Then use &lt;code>proxmox-boot-tool&lt;/code> to initialize grub on it.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">proxmox-boot-tool format /dev/nvme1n1p2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">proxmox-boot-tool init /dev/nvme1n1p2 grub
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>Note for ZFS Snapshot and Backup</title><link>https://blog.nlfox.net/p/note-for-zfs-snapshot-and-backup/</link><pubDate>Sat, 26 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/note-for-zfs-snapshot-and-backup/</guid><description>&lt;img src="https://lowtek.ca/roo/wp-content/uploads/2024/04/openzfslogo.png" alt="Featured image of post Note for ZFS Snapshot and Backup" />&lt;h3 id="create-zfs-on-backup-external-disk">Create ZFS on backup external disk
+&lt;/h3>&lt;p>Find the drive from &lt;code>/dev/disk/by-id/&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;gt; ls /dev/disk/by-id/
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">usb-Seagate_Expansion_HDD_00000000XXXXX-0:0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Create Backup zpool&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">zpool create seagate_backup_pool /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000XXXXX-0:0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="import-zpool-in-external-drive">Import Zpool in external drive
+&lt;/h3>&lt;p>Command &lt;code>zpool import&lt;/code> without any argument will show what&amp;rsquo;s available for import in current system.&lt;/p>
+&lt;p>After that, do &lt;code>zpool import seagate_backup_pool -f&lt;/code> to actually import the backup pool.&lt;/p>
+&lt;h3 id="take-snapshot-of-current-system">Take Snapshot of current system
+&lt;/h3>&lt;p>Check current snapshot&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">zfs list -t snapshot
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Take snapshot for all dataset.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">zfs snapshot -r tank@current
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="send-snapshot-to-backup-pool">Send snapshot to backup pool
+&lt;/h3>&lt;p>Backup as Dataset&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">zfs send -R tank@current | zfs recv seagate_backup_pool/pve-init-10-24-2024
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Increment&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">zfs send -i -R tank@current | zfs recv seagate_backup_pool/pve-init-10-24-2024
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Backup as single file&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">zfs send -R tank@current &amp;gt; tank.bak
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="make-usb-external-drive-sleep">Make USB external drive Sleep
+&lt;/h3>&lt;p>Install hd-idle and execute:&lt;/p>
+&lt;p>To instantly test out:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">hd-idle -t sdd
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>hdparm won&amp;rsquo;t work for usb external drive.&lt;/p>
+&lt;p>To check drive status:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">hdparm -C /dev/sd[abc]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">smartctl -i -n standby /dev/sda
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>To reguarly run &lt;code>hd-idle&lt;/code>, use it&amp;rsquo;s own service.&lt;/p>
+&lt;p>&lt;code>vim /etc/default/hd-idle&lt;/code>&lt;/p>
+&lt;p>Below opts will make &lt;code>hd-idle&lt;/code> sleep device after 600s if no activity.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">HD_IDLE_OPTS&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;-i 600 -l /var/log/hd-idle.log&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>Synology Virtual DSM</title><link>https://blog.nlfox.net/p/synology-virtual-dsm/</link><pubDate>Fri, 25 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/synology-virtual-dsm/</guid><description>&lt;h2 id="enable-kvm-on-virtual-machine">Enable KVM on virtual machine
+&lt;/h2>&lt;p>Switch virtual server CPU type to match host. Somehow this option not exist on UI&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">qm set 105 --cpu host
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="config">Config
+&lt;/h2>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">services&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">dsm&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">container_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">dsm&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">vdsm/virtual-dsm&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">environment&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">DISK_FMT&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;qcow2&amp;#34;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Root disk will be a single file in qcow2, recommanded&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">RAM_SIZE&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;2G&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">CPU_CORES&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;2&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">devices&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">/dev/kvm&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">cap_add&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">NET_ADMIN &lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">volumes&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">/tank/appdata/vdsm/data:/storage&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># need a local storage for its data&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">stop_grace_period&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">2m&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="m">127.0.0.1&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="m">5022&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="m">22&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Local port open for SSH access&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="m">5000&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="m">5000&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="make-synology-able-to-index-and-access-remote-fs">Make Synology able to index and access remote FS.
+&lt;/h2>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">sudo -i
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">wget http://code.imnks.com/face/PatchELFSharp
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">chmod +x PatchELFSharp
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">./PatchELFSharp &amp;#34;/usr/lib/libsynosdk.so.7&amp;#34; &amp;#34;SYNOFSIsRemoteFS&amp;#34; &amp;#34;B8 00 00 00 00 C3&amp;#34;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>We use host network so need to specify &lt;code>ssh 127.0.0.1 -p 5022&lt;/code>.&lt;/p>
+&lt;h3 id="ref">Ref
+&lt;/h3>&lt;p>&lt;a class="link" href="https://wilsonzeng.com/article/c50e99ee-ab33-4da0-9c64-6cb4d0462f94" target="_blank" rel="noopener"
+>https://wilsonzeng.com/article/c50e99ee-ab33-4da0-9c64-6cb4d0462f94&lt;/a>&lt;/p></description></item><item><title>PVE 8.2 Setup Notes</title><link>https://blog.nlfox.net/p/pve-8.2-setup-notes/</link><pubDate>Thu, 24 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/pve-8.2-setup-notes/</guid><description>&lt;h2 id="download">Download
+&lt;/h2>&lt;p>I downloaded 8.2 from &lt;a class="link" href="https://www.proxmox.com/en/downloads" target="_blank" rel="noopener"
+>https://www.proxmox.com/en/downloads&lt;/a>&lt;/p>
+&lt;h2 id="bootable-device">Bootable Device
+&lt;/h2>&lt;p>I used Ventoy &lt;a class="link" href="https://ventoy.net/en/index.html" target="_blank" rel="noopener"
+>https://ventoy.net/en/index.html&lt;/a>. The experience was great.&lt;/p>
+&lt;p>It&amp;rsquo;s based on Grub2. Grub2 have support for ISO long ago, finally someone wrote some good wrapper.&lt;/p>
+&lt;p>Instead of dd, it can have multiple image and boot from any of it. But this actually caused me some issue, so for Proxmox try &lt;em>NOT&lt;/em> to use Ventoy!&lt;/p>
+&lt;h2 id="install-iso-stuck-waiting-for-dev">Install ISO stuck &lt;code>Waiting for /dev&lt;/code>
+&lt;/h2>&lt;p>Using Ventoy, I boot into Proxmox VE ISO. But it stuck immediately&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;#34;Waiting for /dev to be fully populated...&amp;#34;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>It&amp;rsquo;s due to the graphic driver.&lt;/p>
+&lt;p>Press &amp;rsquo;e&amp;rsquo; on the selection screen, GRUB will let you edit the start up parameters.&lt;/p>
+&lt;p>Removing after the &lt;code>ro,quiet&lt;/code> parameter, add &lt;code>nomodeset&lt;/code>. Press &amp;lsquo;Ctrl + X&amp;rsquo; to boot selected entry. After that finally saw the install prompt.&lt;/p>
+&lt;h2 id="new-install-using-zfs-as-root-wont-start-up">New install using ZFS as root won&amp;rsquo;t start up
+&lt;/h2>&lt;p>Another issue I encounter is after finished the install and rebooted, Proxmox stuck when loading the whole system. The message spamming whole screen didn&amp;rsquo;t help, there is no error message at all.&lt;/p>
+&lt;p>This could due to proxmox don&amp;rsquo;t use classic GRUB2 as boot manager. The only way to force it install Grub2 is disable fast boot, enable legacy boot options and disable UEFI boot.&lt;/p>
+&lt;p>After re-install with above option, it should be able to boot properly.&lt;/p>
+&lt;h2 id="remove-subscription-pop-up">Remove subscription pop-up
+&lt;/h2>&lt;p>Quick one-liner&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">sed&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">Ezi&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">bak&lt;/span> &lt;span class="s2">&amp;#34;s/(Ext.Msg.show\(\{\s+title: gettext\(&amp;#39;No valid sub)/void\(\{ \/\/&lt;/span>&lt;span class="se">\1&lt;/span>&lt;span class="s2">/g&amp;#34;&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">usr&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">share&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">javascript&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">proxmox&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">widget&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">toolkit&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">proxmoxlib&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">js&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">systemctl&lt;/span> &lt;span class="n">restart&lt;/span> &lt;span class="n">pveproxy&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">service&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="remove-paid-repo">Remove paid Repo
+&lt;/h2>&lt;p>Move &lt;code>/etc/apt/sources.list.d/pve-enterprise.list&lt;/code> away.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">mv /etc/apt/sources.list.d/pve-enterprise.list /etc/apt/sources.list.d/pve-enterprise.list.bak
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>For &lt;code>/etc/apt/sources.list.d/ceph.list&lt;/code>, my content:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">download&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">proxmox&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">com&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">ceph&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">quincy&lt;/span> &lt;span class="n">bookworm&lt;/span> &lt;span class="n">main&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>My &lt;code>/etc/apt/sources.list&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">ftp&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">us&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">ftp&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">us&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">updates&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># security updates&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">security&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">security&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">download&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">proxmox&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">com&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">pve&lt;/span> &lt;span class="n">bookworm&lt;/span> &lt;span class="n">pve&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">no&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">subscription&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">deb&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">backports&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span> &lt;span class="n">non&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">free&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">deb&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">src&lt;/span> &lt;span class="n">http&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">deb&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">debian&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">debian&lt;/span> &lt;span class="n">bookworm&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">backports&lt;/span> &lt;span class="n">main&lt;/span> &lt;span class="n">contrib&lt;/span> &lt;span class="n">non&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">free&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>自动地域分流代理</title><link>https://blog.nlfox.net/p/%E8%87%AA%E5%8A%A8%E5%9C%B0%E5%9F%9F%E5%88%86%E6%B5%81%E4%BB%A3%E7%90%86/</link><pubDate>Sun, 20 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/%E8%87%AA%E5%8A%A8%E5%9C%B0%E5%9F%9F%E5%88%86%E6%B5%81%E4%BB%A3%E7%90%86/</guid><description>&lt;p>我对翻回墙内的需求很少，但是最近有些奇怪的app有地区锁，于是就顺便把在国内翻墙的东西给反向拿出来了，记录一下，for my own record。&lt;/p>
+&lt;h2 id="how-and-why">How and Why
+&lt;/h2>&lt;p>首先，基本的想法是，我们需要两级的分流，第一级是DNS。现代的网站通过DNS来进行分流以及负载均衡的情况非常普遍。如果只靠IP地理位置来走代理，很容易出现的情况就是，由于DNS查询的地区和实际访问的地区不同，你并不会被DNS分配到想要的endpoint。例如，某个qq.com的子域名，如果用美国IP访问，会返回香港的CDN地址，绕过了IP地址代理规则，导致绕过地域锁失败。&lt;/p>
+&lt;h2 id="where-to-find-rule-data">Where to find rule data
+&lt;/h2>&lt;p>当然我们指望自己写规则不现实，所以需要一些第三方维护的规则文件。我选用的是下面这个源：&lt;/p>
+&lt;p>&lt;a class="link" href="https://github.com/Loyalsoldier/v2ray-rules-dat" target="_blank" rel="noopener"
+>https://github.com/Loyalsoldier/v2ray-rules-dat&lt;/a>&lt;/p>
+&lt;h2 id="solutions">Solutions
+&lt;/h2>&lt;p>现在有很多种成熟的一体化解决方案，我自己用的是Clash。&lt;/p>
+&lt;h3 id="clash-配置">Clash 配置
+&lt;/h3>&lt;p>Clash会接管DNS，所以可以做到DNS分流。并且由于Clash也自带了以上的数据库，所以配置起来比较简单。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">dns&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">enable&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">listen&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">0.0.0.0&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="m">53&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">nameserver&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">tls://8.8.4.4&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># GoogleDNS&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">tls://208.67.222.222&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># OpenDNS&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">nameserver-policy&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">geosite:cn&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="m">114.114.114.114&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">rules&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">GEOSITE,cn,Proxy&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">GEOIP,cn,Proxy&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>GEOSITE负责的是中国大陆的域名。 DNS的部分的大意就是默认走GoogleDNS or OpenDNS，如果DNS请求符合GEOSITE:CN，就使用114的DNS来解析。而114DNS由于是中国大陆的IP，会走中国大陆的代理来访问，保证获得正确的结果。&lt;/p>
+&lt;p>当然凡事都会有例外，比如我遇到的是某个屎黄色论坛把我代理IP给ban了，于是我就在rules顶端加了一行规则让屎黄色论坛走直连。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">DOMAIN-SUFFIX,178.com,DIRECT&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>DHCP自定义设备网关和DNS</title><link>https://blog.nlfox.net/p/dhcp%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AE%BE%E5%A4%87%E7%BD%91%E5%85%B3%E5%92%8Cdns/</link><pubDate>Fri, 11 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/dhcp%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AE%BE%E5%A4%87%E7%BD%91%E5%85%B3%E5%92%8Cdns/</guid><description>&lt;p>在设置完软路由（旁路由）之后，需要修改DHCP选项让软路由来做主要的路由。
+但是大部分时候并不想让所有设备都走代理，一个一个设置静态ip太麻烦，而且有些设备并不能设置静态ip。&lt;/p>
+&lt;p>每个设备加入网络的时候会发一个DHCP广播(DISCOVER) 来请求ip。所以从原理上来讲，dhcp server肯定能通过不同的mac地址来分配DHCP地址。&lt;/p>
+&lt;p>以OpenWrt来举例，有几种办法来分配DHCP地址&lt;/p>
+&lt;h3 id="uci-设置">UCI 设置
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1=&amp;#34;mac&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1.mac=&amp;#34;2A:AA:13:2C:D8:59&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci set dhcp.mac1.networkid=&amp;#34;vpn&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci add_list dhcp.mac1.dhcp_option=&amp;#34;3,192.168.50.10&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci add_list dhcp.mac1.dhcp_option=&amp;#34;6,192.168.50.10&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">uci commit dhcp
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>请参考：https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol#Options&lt;/p>
+&lt;p>&lt;code>dhcp_option=&amp;quot;3,192.168.50.10&amp;quot;&lt;/code>这个是网关
+&lt;code>dhcp_option=&amp;quot;6,192.168.50.10&amp;quot;&lt;/code>这个是DNS&lt;/p>
+&lt;p>其实这些都被uci写进了 &lt;code>/etc/config/dhcp&lt;/code>，之后需要修改就可以直接改文件。&lt;/p>
+&lt;h3 id="dnsmasq-设置">DNSMASQ 设置
+&lt;/h3>&lt;p>其实没什么区别，反正提供DHCP的是DNSMASQ。&lt;/p>
+&lt;p>dnsmasq的配置文件是&lt;code>/etc/dnsmasq.conf&lt;/code>。可以直接改。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">dhcp-host=2A:AA:13:2C:D8:59,set:OTHER
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">dhcp-option=tag:OTHER,3,192.168.50.10
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">dhcp-option=tag:OTHER,6,192.168.50.10
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>PVE LXC OpenWRT 单网口旁路由设置</title><link>https://blog.nlfox.net/p/pve-lxc-openwrt-%E5%8D%95%E7%BD%91%E5%8F%A3%E6%97%81%E8%B7%AF%E7%94%B1%E8%AE%BE%E7%BD%AE/</link><pubDate>Tue, 10 Sep 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/pve-lxc-openwrt-%E5%8D%95%E7%BD%91%E5%8F%A3%E6%97%81%E8%B7%AF%E7%94%B1%E8%AE%BE%E7%BD%AE/</guid><description>&lt;img src="https://upload.wikimedia.org/wikipedia/commons/8/84/OpenWrt_Logo.svg" alt="Featured image of post PVE LXC OpenWRT 单网口旁路由设置" />&lt;p>先下载openwrt，下载官方rootfs就行&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">https&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">downloads&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">openwrt&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">releases&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mf">23.05&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">targets&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">x86&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mi">64&lt;/span>&lt;span class="o">/&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">wget&lt;/span> &lt;span class="n">https&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">//&lt;/span>&lt;span class="n">downloads&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">openwrt&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">org&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">releases&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mf">23.05&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">targets&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">x86&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mi">64&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">openwrt&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mf">23.05&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">x86&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">64&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">rootfs&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">tar&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">gz&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上传到PVE, 创建模板：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">pct create 101 local:vztmpl/openwrt-23.05.2-x86-64-rootfs.tar.gz --rootfs local-lvm:1 --ostype unmanaged --hostname OP --arch amd64 --cores 1 --memory 1024 --swap 0 -net0 bridge=vmbr0,name=eth0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>编辑模板，加入最下面几行&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">features: nesting=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.include: /usr/share/lxc/config/openwrt.common.conf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cgroup2.devices.allow: c 108:0 rwm
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/ppp dev/ppp none bind,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cap.drop:
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>注意 &lt;code>features: nesting=1&lt;/code>， 没有nesting会导致dnsmasq启动失败&lt;/p>
+&lt;p>最终看起来&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">arch: amd64
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cores: 1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">features: nesting=1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">hostname: OP
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">memory: 1024
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">net0: name=eth0,bridge=vmbr0,hwaddr=BC:24:11:3B:3D:8D,type=veth
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ostype: unmanaged
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">rootfs: local-lvm:vm-101-disk-0,size=1G
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">swap: 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.include: /usr/share/lxc/config/openwrt.common.conf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cgroup2.devices.allow: c 108:0 rwm
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.mount.entry: /dev/ppp dev/ppp none bind,create=file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lxc.cap.drop:
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>之后启动，首先肯定连不上LuCI，因为网络设定以及防火墙设定，先修改 &lt;code>/etc/config/network&lt;/code>&lt;/p>
+&lt;p>&lt;code>vim /etc/config/network&lt;/code>&lt;/p>
+&lt;p>看起来像这样&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">config interface &amp;#39;loopback&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option device &amp;#39;lo&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option proto &amp;#39;static&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option ipaddr &amp;#39;127.0.0.1&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option netmask &amp;#39;255.0.0.0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">config globals &amp;#39;globals&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option ula_prefix &amp;#39;fd3f:736d:11c4::/48&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">config device
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option name &amp;#39;eth0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">config interface &amp;#39;lan1&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option proto &amp;#39;static&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option device &amp;#39;eth0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option ipaddr &amp;#39;192.168.101.100&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option netmask &amp;#39;255.255.255.0&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option gateway &amp;#39;192.168.101.1&amp;#39;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>UI 设置，记得加入防火墙区域lan：&lt;/p>
+&lt;p>![[Pasted image 20240206155928.png]]&lt;/p>
+&lt;p>或者 &lt;code>vim /etc/config/firewall&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">config zone
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option name &amp;#39;lan&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option input &amp;#39;ACCEPT&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option output &amp;#39;ACCEPT&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option forward &amp;#39;ACCEPT&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> option network &amp;#39;lan1 utun&amp;#39;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后重启，能访问UI了&lt;/p>
+&lt;h3 id="nftables-旁路由设置">nftables 旁路由设置
+&lt;/h3>&lt;p>大部分文档还停留在 &lt;code>iptables&lt;/code>，现在OpenWRT都已经迁移到 &lt;code>nftables&lt;/code> 了已经，设置应该如下&lt;/p>
+&lt;p>![[Pasted image 20240206161621.png]]&lt;/p>
+&lt;p>反正就是需要一个 &lt;code>MASQUERADE&lt;/code>, 目标和源地址都任意。&lt;/p>
+&lt;h3 id="openwrt-opkg-设置">OpenWRT OPKG 设置
+&lt;/h3>&lt;p>首先换成国内源：https://developer.aliyun.com/mirror/openwrt
+命令：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">sed&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="s1">&amp;#39;s_downloads.openwrt.org_mirrors.aliyun.com/openwrt_&amp;#39;&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">etc&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">opkg&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">distfeeds&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">conf&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>之后安装点必要的包&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">opkg update
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">opkg install luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-opkg-zh-cn
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="openclash-安装">OpenClash 安装
+&lt;/h3>&lt;p>&lt;a class="link" href="https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85" target="_blank" rel="noopener"
+>https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85&lt;/a>
+&lt;a class="link" href="https://github.com/vernesong/OpenClash/releases" target="_blank" rel="noopener"
+>https://github.com/vernesong/OpenClash/releases&lt;/a>&lt;/p>
+&lt;p>按以上两个链接安装OpenClash&lt;/p>
+&lt;p>由于 &lt;code>dnsmasq&lt;/code> 会和 &lt;code>dnsmasq-full&lt;/code> 撞车，于是先卸载dnsmasq. 之后再用下面的命令安装依赖&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">opkg install coreutils-nohup bash dnsmasq-full curl ca-certificates ipset ip-full libcap libcap-bin ruby ruby-yaml kmod-tun kmod-inet-diag unzip kmod-nft-tproxy luci-compat luci luci-base
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>注意SCP现在走SFTP，需要加上 &lt;code>-O&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">scp&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">O&lt;/span> &lt;span class="o">~/&lt;/span>&lt;span class="n">Downloads&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">clash_meta&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="err">@&lt;/span>&lt;span class="mf">192.168&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mf">101.100&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">etc&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">openclash&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">core&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="openclash-side-note">OpenClash Side Note
+&lt;/h3>&lt;p>踩了个坑，因为OpenClash的DNS不work。于是额外装了SmartDNS,
+设置DNS OverHTTPS, 使用 CloudFlare dns：
+然后dnsmasq转发即可。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">1.1.1.1/dns-query
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="ref">Ref
+&lt;/h2>&lt;ol>
+&lt;li>PVE LXC Openwrt 设置： &lt;a class="link" href="https://dev.leiyanhui.com/openwrt/lxc-mian-op/" target="_blank" rel="noopener"
+>https://dev.leiyanhui.com/openwrt/lxc-mian-op/&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.aliyun.com/mirror/openwrt" target="_blank" rel="noopener"
+>https://developer.aliyun.com/mirror/openwrt&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85" target="_blank" rel="noopener"
+>https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85&lt;/a>&lt;/li>
+&lt;/ol></description></item></channel></rss>

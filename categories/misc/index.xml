@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Misc on nlfox's Blog</title><link>https://blog.nlfox.net/categories/misc/</link><description>Recent content in Misc on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 22 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/categories/misc/index.xml" rel="self" type="application/rss+xml"/><item><title>UOS 原生微信多开</title><link>https://blog.nlfox.net/p/uos-%E5%8E%9F%E7%94%9F%E5%BE%AE%E4%BF%A1%E5%A4%9A%E5%BC%80/</link><pubDate>Thu, 22 Aug 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/uos-%E5%8E%9F%E7%94%9F%E5%BE%AE%E4%BF%A1%E5%A4%9A%E5%BC%80/</guid><description>&lt;p>适用目前最新UOS原生微信版本，不适用于其他版本。&lt;/p>
+&lt;h3 id="验证微信版本是否适用本方案">验证微信版本是否适用本方案
+&lt;/h3>&lt;p>首先打开终端，输入命令，如果找不到终端在哪里，有件点击桌面空白处，应该能看到在终端中打开的选项。输入如下命令&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">ls /opt/apps/
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果结果里有
+&lt;code>com.tencent.wechat&lt;/code>，那么大概率可以适用。&lt;/p>
+&lt;h3 id="多开脚本">多开脚本
+&lt;/h3>&lt;p>将以下脚本保存到任意目录&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="cp">#!/bin/bash
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cp">&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">SANDBOX_HOME&lt;/span>&lt;span class="o">=&lt;/span>wechat_home_1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">WECHAT_PATH&lt;/span>&lt;span class="o">=&lt;/span>/opt/apps/com.tencent.wechat/files/wechat
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mkdir -p ~/&lt;span class="nv">$ISOLATED_HOME&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">bwrap --dev-bind / / &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span>--bind ~/&lt;span class="nv">$ISOLATED_HOME&lt;/span> ~/ &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span>&lt;span class="nv">$WECHAT_PATH&lt;/span> &lt;span class="nv">$@&lt;/span> &lt;span class="p">&amp;amp;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>保存为&lt;code>wechat.sh&lt;/code>。
+在文件所在文件夹空白处点击右键，“在终端中打开”，打开终端。
+输入如下命令&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">chmod +x wechat.sh
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>完成之后，运行脚本&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">./wechat.sh
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>应该就可以看到第二个微信的登录画面了。&lt;/p></description></item></channel></rss>

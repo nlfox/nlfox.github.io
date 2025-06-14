@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Archlinux on nlfox's Blog</title><link>https://blog.nlfox.net/tags/archlinux/</link><description>Recent content in Archlinux on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sat, 12 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/tags/archlinux/index.xml" rel="self" type="application/rss+xml"/><item><title>SteamOS VisualNovel Guide</title><link>https://blog.nlfox.net/p/steamos-visualnovel-guide/</link><pubDate>Sat, 12 Oct 2024 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/steamos-visualnovel-guide/</guid><description>&lt;img src="https://cdn.cloudflare.steamstatic.com/steamdeck/images/video/overview_oled.jpg" alt="Featured image of post SteamOS VisualNovel Guide" />&lt;h2 id="common-issue--solution">Common issue &amp;amp; solution
+&lt;/h2>&lt;h3 id="install-proton-ge">Install Proton-GE
+&lt;/h3>&lt;p>Proton GE is community maintained Proton, provide better compatibility than original proton.&lt;/p>
+&lt;p>&lt;a class="link" href="https://www.rockpapershotgun.com/how-to-install-proton-ge-on-the-steam-deck" target="_blank" rel="noopener"
+>https://www.rockpapershotgun.com/how-to-install-proton-ge-on-the-steam-deck&lt;/a>&lt;/p>
+&lt;p>Note: ProtonGE &amp;gt;= 9.10 fixed a lot of video related issue, upgrade and enjoy!&lt;/p>
+&lt;h3 id="define-locale-for-a-game">Define Locale for a Game
+&lt;/h3>&lt;p>First you need to add required locale to SteamOS.
+You can use this script:
+&lt;a class="link" href="https://gist.github.com/XargonWan/cc660daf92c224b7241cbf5a2bf12c47" target="_blank" rel="noopener"
+>https://gist.github.com/XargonWan/cc660daf92c224b7241cbf5a2bf12c47&lt;/a>&lt;/p>
+&lt;p>It&amp;rsquo;s a bit old so I recommend run the command line by line instead of all at once.
+This way in case of issue you won&amp;rsquo;t mess things up.
+After this you can put &lt;code>LANG=ja_JP.UTF-8 %command%&lt;/code> to launch configurations.&lt;/p>
+&lt;p>Potential other regions beside &lt;code>ja_JP&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">zh_CN.UTF-8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">zh_TW.UTF-8
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="game-crash-on-fullscreen-mode">Game crash on Fullscreen mode
+&lt;/h3>&lt;p>Due to some ancient DX API, some game may refuse to run in fullscreen mode.&lt;/p>
+&lt;p>Start the game in desktop mode first, if it&amp;rsquo;s possible, set it to &lt;code>window&lt;/code> or &lt;code>broaderless window&lt;/code> mode.&lt;/p>
+&lt;p>If the game is too old and don&amp;rsquo;t have a window mode, one useful tool is &lt;code>DxWnd&lt;/code>&lt;/p>
+&lt;p>&lt;a class="link" href="https://kingdoms.catsboard.com/t1522-how-to-use-dxwnd" target="_blank" rel="noopener"
+>https://kingdoms.catsboard.com/t1522-how-to-use-dxwnd&lt;/a>&lt;/p>
+&lt;h3 id="font-missing-or-weird">Font missing or weird
+&lt;/h3>&lt;p>The font is limited with built-in Proton font library.&lt;/p>
+&lt;p>If you notice the font doesn&amp;rsquo;t looks correct in the game, try to add required font to the folder&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">/home/deck/.local/share/Steam/steamapps/compatdata/GAME_ID_HERE/pfx/drive_c/windows/Fonts
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Or if you are not sure what font was missing, just copy over the whole font folder (&lt;code>C:\Windows\Fonts&lt;/code>) from windows computer.&lt;/p>
+&lt;h3 id="dual-boot-windows-on-steamdeck">Dual boot windows on SteamDeck
+&lt;/h3>&lt;p>Some game simply can&amp;rsquo;t be run in Linux due to anti-cheat. So still worth to install a windows on steamdeck sometimes.&lt;/p>
+&lt;p>This guide explains most of it:
+&lt;a class="link" href="https://www.makeuseof.com/how-to-dual-boot-steam-deck-windows/" target="_blank" rel="noopener"
+>https://www.makeuseof.com/how-to-dual-boot-steam-deck-windows/&lt;/a>&lt;/p>
+&lt;h4 id="dual-boot-manager">Dual boot manager
+&lt;/h4>&lt;p>&lt;strong>Clover Boot Manager&lt;/strong> works great.&lt;/p>
+&lt;h4 id="steamdeck-windows-drivers">Steamdeck windows drivers
+&lt;/h4>&lt;p>Refer to this official page for drivers: &lt;a class="link" href="https://help.steampowered.com/en/faqs/view/6121-ECCD-D643-BAA8" target="_blank" rel="noopener"
+>https://help.steampowered.com/en/faqs/view/6121-ECCD-D643-BAA8&lt;/a>&lt;/p>
+&lt;h4 id="steamdeck-sidebar-on-windows">Steamdeck sidebar on Windows
+&lt;/h4>&lt;p>For steamdeck like sidebar experience, I recommand &lt;a class="link" href="https://github.com/Valkirie/HandheldCompanion" target="_blank" rel="noopener"
+>https://github.com/Valkirie/HandheldCompanion&lt;/a>.&lt;/p>
+&lt;h4 id="steaminput-for-desktop-mode">SteamInput for Desktop mode
+&lt;/h4>&lt;p>I personally do not recommand it&amp;rsquo;s desktop mode control tho, instead I recommand the one built-in steam: Steam on windows can define desktop layout, you can check the option below:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">Steam -&amp;gt; Settings -&amp;gt; Controller -&amp;gt; Desktop Configuration
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>to set it up. It will provide more flexibility.&lt;/p>
+&lt;h4 id="share-your-steamlibrary-with-linux">Share your SteamLibrary with Linux
+&lt;/h4>&lt;p>Given VNs are not performance sensitive, we can put them in TF card so that we can share between Linux and Windows.&lt;/p>
+&lt;h5 id="ntfs">NTFS
+&lt;/h5>&lt;p>&lt;a class="link" href="https://github.com/scawp/Steam-Deck.Mount-External-Drive" target="_blank" rel="noopener"
+>https://github.com/scawp/Steam-Deck.Mount-External-Drive&lt;/a>&lt;/p>
+&lt;p>Above script should help auto mount shared drive between Windows and SteamOS.&lt;/p>
+&lt;p>Afther that, if you move your game library to TF card, then it can be read from both Windows and SteamOS seamlessly.&lt;/p>
+&lt;h5 id="btrfs">BTRFS
+&lt;/h5>&lt;p>Since windows have a good BTRFS driver now, BTRFS might be another good option. It will have better performance compared to NTFS/exFAT.&lt;/p>
+&lt;p>Driver: &lt;a class="link" href="https://github.com/maharmstone/btrfs" target="_blank" rel="noopener"
+>https://github.com/maharmstone/btrfs&lt;/a>&lt;/p>
+&lt;p>In steamOS, you can use same script as NTFS to auto load BTRFS &lt;a class="link" href="https://github.com/scawp/Steam-Deck.Mount-External-Drive" target="_blank" rel="noopener"
+>https://github.com/scawp/Steam-Deck.Mount-External-Drive&lt;/a>&lt;/p>
+&lt;h2 id="how-to-debug">How to Debug
+&lt;/h2>&lt;p>Sometimes common fix won&amp;rsquo;t help with the issue you are facing, below is some useful resource/mechanism to do specific game debugging.&lt;/p>
+&lt;h3 id="where-to-look-for-info-online">Where to look for info online
+&lt;/h3>&lt;p>Usually, you are not along. Try search the issue on internet. There are multiple keywords can help you find the right resources:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;lt;your issue&amp;gt; + Proton
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&amp;lt;your issue&amp;gt; + Wine
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Since proton base on wine, you can find wine related solution helps as well.&lt;/p>
+&lt;p>&lt;em>protontricks&lt;/em> is the equivalent to &lt;em>winetricks&lt;/em>.&lt;/p>
+&lt;p>Useful websites:&lt;/p>
+&lt;p>&lt;a class="link" href="https://www.protondb.com/" target="_blank" rel="noopener"
+>https://www.protondb.com/&lt;/a> (Steam games)&lt;/p>
+&lt;p>&lt;a class="link" href="https://appdb.winehq.org/" target="_blank" rel="noopener"
+>https://appdb.winehq.org/&lt;/a> (non-Steam games)&lt;/p>
+&lt;p>&lt;a class="link" href="https://wiki.archlinux.org/" target="_blank" rel="noopener"
+>https://wiki.archlinux.org/&lt;/a> (SteamOS based on Archlinux)&lt;/p>
+&lt;h3 id="enable-debug-log">Enable debug log
+&lt;/h3>&lt;p>Add &lt;code>PROTON_LOG=1&lt;/code> to your game launch options in Steam will generate debug log in home location (&lt;code>/home/deck&lt;/code>).&lt;/p>
+&lt;p>Search for useful log and search on internet.&lt;/p></description></item></channel></rss>

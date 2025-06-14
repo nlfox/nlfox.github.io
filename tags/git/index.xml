@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Git on nlfox's Blog</title><link>https://blog.nlfox.net/tags/git/</link><description>Recent content in Git on nlfox's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 25 May 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.nlfox.net/tags/git/index.xml" rel="self" type="application/rss+xml"/><item><title>Local git repo for remote code syncing</title><link>https://blog.nlfox.net/p/local-git-repo-for-remote-code-syncing/</link><pubDate>Sun, 25 May 2025 00:00:00 +0000</pubDate><guid>https://blog.nlfox.net/p/local-git-repo-for-remote-code-syncing/</guid><description>&lt;p>There are multiple way to edit and commit file on a remote host, like VSCode, Jetbrains Sync.
+But sometimes these may not work for your case. For example:&lt;/p>
+&lt;ol>
+&lt;li>The host SSH-able does not connect to internet, so can&amp;rsquo;t do git pull.&lt;/li>
+&lt;li>Glibc version too old for VSCode.&lt;/li>
+&lt;li>Private repo not public available.&lt;/li>
+&lt;/ol>
+&lt;p>In these cases, one way to make it work is to use a local git repo on remote host, and push to it use SSH.
+(For example, below I use a private LustreSrc package I&amp;rsquo;m working on.)&lt;/p>
+&lt;p>On target host&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">mkdir -p ~/git-repos/lustreSrc.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">cd&lt;/span> ~/git-repos/lustreSrc.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">git init --bare &lt;span class="c1"># this initialize the local git repo&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>On local git repo, which you should have already cloned it locally, add a remote target on host.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">git remote add mdstest mdstest:/home/&lt;span class="nv">$USER&lt;/span>/git-repos/lustreSrc.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">git push -u mdstest b2_15 &lt;span class="c1"># &amp;lt;branch_name&amp;gt; you want to work on&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>On target host&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">git clone ~/git-repos/lustreSrc.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">git checkout b2_15 &lt;span class="c1"># Checkout &amp;lt;branch_name&amp;gt; specified above&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">git pull
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Then you are all set to do bi-directal sync between local and remote! Just push and commit as usual.&lt;/p></description></item></channel></rss>
